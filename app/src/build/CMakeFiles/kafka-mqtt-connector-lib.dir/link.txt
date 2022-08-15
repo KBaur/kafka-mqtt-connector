@@ -1,0 +1,2 @@
+/usr/bin/ar qc libkafka-mqtt-connector-lib.a CMakeFiles/kafka-mqtt-connector-lib.dir/include/MqttConnector.cpp.o CMakeFiles/kafka-mqtt-connector-lib.dir/include/MqttConnectorBuilder.cpp.o CMakeFiles/kafka-mqtt-connector-lib.dir/include/KafkaConnectorBuilder.cpp.o CMakeFiles/kafka-mqtt-connector-lib.dir/include/IFetchEnvironment.cpp.o CMakeFiles/kafka-mqtt-connector-lib.dir/include/ConnectorFactory.cpp.o
+/usr/bin/ranlib libkafka-mqtt-connector-lib.a
