@@ -5,11 +5,15 @@ networks:
 
 services:
   mosquitto:
-    image: matteocollina/mosca:latest
+    image: eclipse-mosquitto:latest
+    volumes:
+      - ./mosquitto:/mosquitto/config
     ports:
       - 1883:1883
+      - 8883:8883
     networks:
       - test
+
   zookeeper:
     image: 'bitnami/zookeeper:latest'
     ports:
@@ -23,14 +27,38 @@ services:
     image: 'bitnami/kafka:latest'
     ports:
       - '9092:9092'
+    # volumes:
+    #   - ./kafka:/bitnami/kafka
     environment:
-      #- KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
-      #- KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092
       - KAFKA_BROKER_ID=1
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
+      # - KAFKA_ADVERTISED_LISTENERS='SSL://kafka:9092'
+      # - KAFKA_SSL_KEYSTORE_FILENAME=/bitnami/kafka/client.key
+      # - KAFKA_SSL_KEYSTORE_CREDENTIALS=cert_creds
+      # - KAFKA_SSL_KEY_CREDENTIALS=cert_creds
+      # - KAFKA_SSL_TRUSTSTORE_FILENAME=/bitnami/kafka/client.crt
+      # - KAFKA_SSL_TRUSTSTORE_CREDENTIALS=cert_creds
+      # - KAFKA_SSL_CLIENT_AUTH='required'
+      # - KAFKA_SECURITY_PROTOCOL=SSL
+      # - KAFKA_SECURITY_INTER_BROKER_PROTOCOL=SSL
+      # - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
     depends_on:
       - zookeeper
+    networks:
+      - test
+
+  kowl:
+    image: quay.io/cloudhut/kowl
+    ports:
+      - 12345:8080
+    environment:
+      - KAFKA_BROKERS=kafka:9092
+    depends_on:
+      - kafka
+      - mosquitto
+      - zookeeper
+      - init-kafka
     networks:
       - test
 
@@ -52,7 +80,7 @@ services:
      - MQTT_HOST=mosquitto
      - MQTT_PORT=1883
      - MQTT_CLIENT_ID=mqtt-client-1
-     - MQTT_QOS=2
+     - MQTT_QOS=0
      - KAFKA_HOST=kafka
      - KAFKA_PORT=9092
      - KAFKA_CLIENT_ID=testing-kafka-producer-1

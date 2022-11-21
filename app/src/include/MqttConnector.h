@@ -8,6 +8,7 @@
 #include <sstream>
 #include <iomanip>
 #include <memory>
+#include <regex>
 
 #include <kafka/KafkaProducer.h>
 
@@ -31,6 +32,7 @@ public:
     void SetProducer(std::shared_ptr<::kafka::clients::KafkaProducer> p_producer);
     void SetQos(std::uint8_t p_qos);
     void SetTopicsToSubscribeTo(const std::multimap<std::string,std::string>& p_topics);
+    void SetTraceContextFlag(bool p_flag);
 
     // names in the functions commented to prevent unused parameter warning
     virtual void on_connect(int /*rc*/);
@@ -43,6 +45,7 @@ public:
     virtual void on_error();
 
 private:
+    std::optional<std::vector<kafka::Header>> AddTraceContext(const std::string& p_msg);
     void SubscribeToTopics();
     void UnsubscribeToTopics();
     void SendToKafka(const std::string & p_topic,const std::string& p_header, const std::string p_message);
@@ -50,7 +53,9 @@ private:
     std::shared_ptr<::kafka::clients::KafkaProducer> m_producer;
     std::uint8_t m_qos{0};
     std::multimap<std::string,std::string> m_topics;
+    bool m_useTraceContext;
     bool m_connected{false};
+    const std::string m_regexString{R"(\"(traceparent|tracestate)\"\s*:\s*\"(\w*)\")"};
 };
 }
 }

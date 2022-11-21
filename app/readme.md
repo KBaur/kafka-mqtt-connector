@@ -20,25 +20,64 @@ $ docker-compose run
  * ...
 
 ## Features
+* Translate MQTT messages to kafka streams and vice versa via the TOPIC_MAPPING env variable:
+```
+TOPIC_MAPPING=test1-mqtt>>test1-kafka;test2-mqtt<<test2-kafka
+```
+That translates into:
+```
+test1-mqtt topic -> to kafka topic test1-kafka 
+```
+```
+test2-kafka topic -> to mqtt topic test2-mqtt 
+```
+* Use modern features like the tracecontext, a [trace context](https://w3c.github.io/trace-context-mqtt/) for MQTT
 
-Future implementations will have a monitoring interface with prometheus and an automatic build that can be pulled from docker hub.
-Currently only the unencrypted communication is supported (without SSL/TLS) I will fix this as well in the future versions.
+---
+
+#### TOPIC: 
+```
+test-topic/device1
+```
+#### PAYLOAD:
+```json
+{
+    "msg": { ... },
+    "traceparent": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+    "tracestate": "ot=BleGNlZWRzIHRohbCBwbGVhc3VyZS4"
+}
+```
+
+---
+
+translates into kafka
+
+---
+
+##### KEY: 
+```
+test-topic/device1
+```
+##### HEADER: 
+```
+traceparent:00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01
+tracestate:ot=BleGNlZWRzIHRohbCBwbGVhc3VyZS4
+```
+##### VALUE:
+```json
+{
+    "msg": { ... },
+    "traceparent": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+    "tracestate": "ot=BleGNlZWRzIHRohbCBwbGVhc3VyZS4"
+}
+```
+---
+
+### Future
+Future implementations will have a 
+* monitoring interface with prometheus
  
 ## Usage samples
-
-#### Basic usage
-```c++
-#include <iostream>
-#include <vector>
-#include <sstream>
-#include <fstream>
-
-int main() 
-{
-   
-}
-
-```
 
 ## Documentation
 

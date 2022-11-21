@@ -59,6 +59,13 @@
         "typeindex": "cpp",
         "typeinfo": "cpp",
         "utility": "cpp",
-        "variant": "cpp"
-    }
+        "variant": "cpp",
+        "cstdarg": "cpp",
+        "algorithm": "cpp",
+        "iterator": "cpp",
+        "memory_resource": "cpp",
+        "random": "cpp",
+        "cinttypes": "cpp"
+    },
+    "cmake.configureOnOpen": false
 }

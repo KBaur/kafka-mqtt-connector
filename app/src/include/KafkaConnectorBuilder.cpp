@@ -29,6 +29,7 @@ namespace kb{
                 {"enable.auto.commit", "true"},
                 {"client.id",kafkaClientId}
             });
+            m_useTraceContext = static_cast<bool>(atoi(FetchEnvVariable("USE_TRACE_CONTEXT").c_str()));
         }
 
         KafkaConnectorBuilder::~KafkaConnectorBuilder()
@@ -56,6 +57,30 @@ namespace kb{
             }
             return m_producer;
         }
+        
+        void KafkaConnectorBuilder::PrintDebugMessage(const ::kafka::clients::consumer::ConsumerRecord& p_record, const std::string& p_payload)
+        {
+            std::cout << "% Got a new message..." << std::endl;
+            std::cout << "    Topic    : " << p_record.topic() << std::endl;
+            std::cout << "    Partition: " << p_record.partition() << std::endl;
+            std::cout << "    Offset   : " << p_record.offset() << std::endl;
+            std::cout << "    Timestamp: " << p_record.timestamp().toString() << std::endl;
+            std::cout << "    Headers  : " << ::kafka::toString(p_record.headers()) << std::endl;
+            std::cout << "    Key   [" << p_record.key().toString() << "]" << std::endl;
+            std::cout << "    Value [" << p_payload << "]" << std::endl;
+        }
+
+        std::string KafkaConnectorBuilder::AddTraceContext(const ::kafka::Headers& p_header, const std::string& p_payload) const
+        {
+            std::string lv(p_payload.begin(), p_payload.end()-1);
+            lv.append(",");
+            for(auto header : p_header)
+            {
+                lv.append("\"").append(header.key).append("\":\"").append(header.value.toString()).append("\",");
+            }
+            lv.append("}");
+            return lv;
+        }
 
         std::shared_ptr<std::vector<std::thread>> KafkaConnectorBuilder::BuildConsumerThreads()
         {
@@ -67,7 +92,7 @@ namespace kb{
 
                 for(auto pair:m_topicsToSubscribeTo)
                 {
-                    auto function = [](::kafka::Properties propertiesConsumer,std::pair<const std::string, std::string> pair, std::atomic<bool>* stopFlag){
+                    auto function = [this](::kafka::Properties propertiesConsumer,std::pair<const std::string, std::string> pair, std::atomic<bool>* stopFlag){
                     try 
                     {
 
@@ -89,15 +114,12 @@ namespace kb{
                                 std::string payload = record.value().toString();
                                 if (!record.error()) {
 #ifdef DEBUG
-                                    std::cout << "% Got a new message..." << std::endl;
-                                    std::cout << "    Topic    : " << record.topic() << std::endl;
-                                    std::cout << "    Partition: " << record.partition() << std::endl;
-                                    std::cout << "    Offset   : " << record.offset() << std::endl;
-                                    std::cout << "    Timestamp: " << record.timestamp().toString() << std::endl;
-                                    std::cout << "    Headers  : " << ::kafka::toString(record.headers()) << std::endl;
-                                    std::cout << "    Key   [" << record.key().toString() << "]" << std::endl;
-                                    std::cout << "    Value [" << payload << "]" << std::endl;
+                                    PrintDebugMessage(record,payload);
 #endif
+                                    if(this->m_useTraceContext && payload.at(0)=='{')
+                                    {
+                                        payload = AddTraceContext(record.headers(),payload);
+                                    }
                                     mqtt->publish(0,pair.first.c_str(),payload.size(),(void *)payload.c_str());
                                 } else {
                                     std::cerr << record.toString() << std::endl;

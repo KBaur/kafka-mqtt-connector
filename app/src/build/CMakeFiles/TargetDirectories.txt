@@ -1,8 +1,0 @@
-/services/src/build/CMakeFiles/install/strip.dir
-/services/src/build/CMakeFiles/install.dir
-/services/src/build/CMakeFiles/list_install_components.dir
-/services/src/build/CMakeFiles/rebuild_cache.dir
-/services/src/build/CMakeFiles/edit_cache.dir
-/services/src/build/CMakeFiles/kafka-mqtt-connector.dir
-/services/src/build/CMakeFiles/install/local.dir
-/services/src/build/CMakeFiles/kafka-mqtt-connector-lib.dir

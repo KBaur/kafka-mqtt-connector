@@ -7,6 +7,7 @@
 #include <exception>
 #include <memory>
 
+
 #include <boost/algorithm/string.hpp>
 #include <kafka/KafkaProducer.h>
 
@@ -14,7 +15,14 @@
 
 int main(int argc, char ** argv)
 {
-    std::string line = std::getenv("TOPIC_MAPPING");    
+    std::string line;
+    try{
+        line = std::getenv("TOPIC_MAPPING");  
+    }catch(std::exception ex)
+    {
+        std::cerr << "Env variable with name TOPIC_MAPPING does not exist, closing program" << std::endl;
+        exit(EXIT_FAILURE);
+    }
 
     kb::ConnectorFactory connectorFactor;
     connectorFactor.SetMappingString(line);
@@ -24,7 +32,7 @@ int main(int argc, char ** argv)
 
     auto kafkaProducer = kafkaBuilder->BuildProducer();
     auto mqtt = mqttBuilder->BuildConnector();
-    //auto threads = kafkaBuilder->BuildConsumerThreads();
+    auto kafkaConsumer = kafkaBuilder->BuildConsumerThreads();
 
     mqtt->SetProducer(kafkaProducer);
     mqtt->loop_start();

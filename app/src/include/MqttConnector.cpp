@@ -122,9 +122,40 @@ namespace kb{
 #endif
         }
 
+        void MqttConnector::SetTraceContextFlag(bool p_flag)
+        {
+            m_useTraceContext=p_flag;
+        }
+        
         void MqttConnector::SetProducer(std::shared_ptr<kafka::clients::KafkaProducer> p_producer)
         {
             m_producer = p_producer;
+        }
+
+        std::optional<std::vector<kafka::Header>> MqttConnector::AddTraceContext(const std::string& p_msg)
+        {
+            std::vector<kafka::Header> headers;
+            headers.reserve(2);
+            std::regex regex(m_regexString);
+            auto matchBegin = std::sregex_iterator(p_msg.begin(), p_msg.end(), regex);
+            auto matchEnd = std::sregex_iterator();
+            for (std::sregex_iterator i = matchBegin; i != matchEnd; ++i) {
+                std::smatch match = *i;
+                if(match.size()>2)
+                {
+                    kafka::Header h;
+                    h.key = match[1].str();
+                    std::string * msg{new std::string(match[2].str())};
+                    h.value = kafka::ConstBuffer(msg->c_str(),msg->size());
+                    headers.push_back(h);
+                }
+            }
+            //Check if there is content
+            if(headers.size()>=1)
+            {
+                return headers;
+            }
+            return {};
         }
 
         void MqttConnector::SendToKafka(const std::string & p_topic,const std::string& p_header, const std::string p_message)
@@ -135,9 +166,16 @@ namespace kb{
                 ss << "You must initialize the Kafka Producer first! File: " << __FILE__ << " Line: " << __LINE__;
                 throw std::invalid_argument(ss.str());
             }
-            //TODO implement head
-            kafka::Topic topic(p_topic.c_str(),p_topic.size());
-            auto record = kafka::clients::producer::ProducerRecord(topic,kafka::NullKey,kafka::Value(p_message.c_str(), p_message.size()));
+            kafka::Topic topic(p_topic.c_str());
+            auto record = kafka::clients::producer::ProducerRecord(topic,kafka::Key(p_header.c_str(),p_header.size()),kafka::Value(p_message.c_str(), p_message.size()));
+            if(this->m_useTraceContext)
+            {
+                auto newHeader = this->AddTraceContext(p_message);
+                if(newHeader.has_value())
+                {
+                    record.headers() = newHeader.value();
+                }
+            }
             // Send the message
             m_producer->send(record,
                 // The delivery report handler
